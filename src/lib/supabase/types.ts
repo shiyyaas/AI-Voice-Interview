@@ -15,6 +15,21 @@ export type SessionStatus =
   | 'failed'
   | 'cancelled';
 
+export interface CompetencyMetrics {
+  syntaxAccuracy: number; // 0-100
+  systemArchitecture: number; // 0-100
+  verbalCommunication: number; // 0-100
+  problemSolving: number; // 0-100
+  codeQuality: number; // 0-100
+}
+
+export interface DetailedCritiquePayload {
+  competency_scores?: CompetencyMetrics;
+  suggested_exercises?: string[];
+  summary?: string;
+  notes?: string;
+}
+
 export interface Database {
   public: {
     Tables: {

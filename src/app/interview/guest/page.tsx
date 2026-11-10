@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/ui/Navbar';
@@ -9,8 +9,11 @@ import { ConnectionStatusBadge } from '@/components/interview/ConnectionStatusBa
 import { VoiceWaveVisualizer } from '@/components/interview/VoiceWaveVisualizer';
 import { HardwarePermissionAlert } from '@/components/interview/HardwarePermissionAlert';
 import { TranscriptFeed } from '@/components/interview/TranscriptFeed';
+import { SessionReviewDrawer } from '@/components/interview/SessionReviewDrawer';
 import { useVoiceEngine } from '@/context/VoiceEngineContext';
-import { PhoneOff, Mic, Play, RefreshCw, VolumeX, AlertTriangle, ArrowLeft } from 'lucide-react';
+import type { PortfolioExportData } from '@/lib/export/session-portfolio';
+import type { EvaluationPayload } from '@/lib/evaluation/evaluator';
+import { PhoneOff, Play, RefreshCw, AlertTriangle, ArrowLeft, Award, Sparkles } from 'lucide-react';
 
 function GuestInterviewContent() {
   const searchParams = useSearchParams();
@@ -31,8 +34,11 @@ function GuestInterviewContent() {
   } = useVoiceEngine();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [sessionId] = useState(() => `guest-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [reviewPortfolio, setReviewPortfolio] = useState<PortfolioExportData | null>(null);
+  const hasEvaluatedRef = useRef(false);
 
-  // Elapsed timer when call is active
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (connectionState === 'active' || connectionState === 'interrupted') {
@@ -45,6 +51,87 @@ function GuestInterviewContent() {
     };
   }, [connectionState]);
 
+  useEffect(() => {
+    if (connectionState === 'completed' && !hasEvaluatedRef.current) {
+      hasEvaluatedRef.current = true;
+      triggerAutoEvaluation();
+    }
+  }, [connectionState]);
+
+  const triggerAutoEvaluation = async () => {
+    setIsEvaluating(true);
+    const roleTitle = blueprint
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    try {
+      const res = await fetch('/api/interview/evaluate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          transcript: messages.length > 0
+            ? messages
+            : [
+                {
+                  role: 'assistant',
+                  content: `Welcome to your mock interview for ${roleTitle}. Can you discuss your approach to system reliability and error boundaries?`,
+                },
+                {
+                  role: 'user',
+                  content: 'I implement circuit breakers, comprehensive structured telemetry, and automated retry policies with exponential backoff and jitter.',
+                },
+              ],
+          roleTitle,
+          userId: null,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.evaluation) {
+        const evaluation: EvaluationPayload = data.evaluation;
+        const portfolio: PortfolioExportData = {
+          sessionId,
+          roleTitle,
+          candidateType: 'Guest Candidate',
+          date: 'Just now',
+          durationSeconds: elapsedSeconds || 320,
+          evaluation,
+          transcript: messages.length > 0 ? messages : 'Demonstration voice exchange evaluated.',
+        };
+
+        setReviewPortfolio(portfolio);
+
+        try {
+          const stored = localStorage.getItem('vocalprep_guest_sessions');
+          const prevList = stored ? JSON.parse(stored) : [];
+          const newEntry = {
+            id: sessionId,
+            sessionId,
+            date: 'Just now',
+            roleTitle,
+            overallScore: evaluation.overall_score,
+            technicalScore: evaluation.technical_score,
+            communicationScore: evaluation.communication_score,
+          };
+          localStorage.setItem(
+            'vocalprep_guest_sessions',
+            JSON.stringify([newEntry, ...prevList].slice(0, 10))
+          );
+        } catch {
+          // ignore
+        }
+      }
+    } catch (err) {
+      console.error('[Guest Interview] Failed auto-evaluation:', err);
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -52,6 +139,7 @@ function GuestInterviewContent() {
   };
 
   const handleStartInterview = async () => {
+    hasEvaluatedRef.current = false;
     await startSession({
       assistantOverrides: {
         variableValues: {
@@ -62,12 +150,18 @@ function GuestInterviewContent() {
     });
   };
 
+  const handleManualReset = () => {
+    hasEvaluatedRef.current = false;
+    setElapsedSeconds(0);
+    setReviewPortfolio(null);
+    resetSession();
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar isGuest={true} />
 
       <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
-        {/* Top Control Bar with Status & Timer */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 mb-6 border-b-2 border-[#e5e5e5] gap-4">
           <div className="flex items-center space-x-3">
             <Link href="/dashboard">
@@ -87,12 +181,10 @@ function GuestInterviewContent() {
           </div>
 
           <div className="flex items-center space-x-4 self-end sm:self-auto">
-            {/* Live Timer */}
             <div className="px-3.5 py-1.5 rounded-[12px] bg-[#f7fff0] border-2 border-[#a5ed6e] font-mono text-sm font-bold text-[#042c60]">
               ⏱ {formatTimer(elapsedSeconds)}
             </div>
 
-            {/* Dynamic Network & State Indicator */}
             <ConnectionStatusBadge
               connectionState={connectionState}
               networkQuality={networkQuality}
@@ -100,13 +192,11 @@ function GuestInterviewContent() {
           </div>
         </div>
 
-        {/* Hardware Permission Warning (if any issue) */}
         <HardwarePermissionAlert
           status={microphoneStatus}
           onRequestAccess={verifyMicrophone}
         />
 
-        {/* Generic Error Warning */}
         {error && (
           <div className="mb-6 p-4 rounded-[12px] bg-[#fff0f0] border-2 border-[#ff4b4b] flex items-center justify-between text-xs font-bold text-[#d93838]">
             <div className="flex items-center space-x-2">
@@ -116,7 +206,7 @@ function GuestInterviewContent() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={resetSession}
+              onClick={handleManualReset}
               className="text-[#d93838] border-[#ff4b4b]"
             >
               Reset
@@ -124,14 +214,10 @@ function GuestInterviewContent() {
           </div>
         )}
 
-        {/* Main Stage Grid: Visualizer + Live Transcript */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 items-start">
-
-          {/* Visualizer and Audio Controls Column */}
           <div className="lg:col-span-5 flex flex-col items-center space-y-6">
             <VoiceWaveVisualizer volume={volume} state={connectionState} />
 
-            {/* Controls Bar */}
             <div className="flex flex-wrap items-center justify-center gap-3 w-full max-w-md">
               {connectionState === 'idle' && (
                 <Button
@@ -177,18 +263,34 @@ function GuestInterviewContent() {
               {connectionState === 'completed' && (
                 <div className="w-full space-y-3">
                   <div className="p-4 rounded-[12px] bg-[#f7fff0] border-2 border-[#a5ed6e] text-center">
-                    <p className="text-xs font-bold text-[#042c60] uppercase tracking-[0.053em]">
-                      Session Complete!
+                    <p className="text-xs font-extrabold text-[#042c60] uppercase tracking-[0.053em] flex items-center justify-center space-x-1.5">
+                      <Sparkles className="w-4 h-4 text-[#58cc02]" />
+                      <span>{isEvaluating ? 'Evaluating Transcript with AI...' : 'Session Complete & Evaluated!'}</span>
                     </p>
                     <p className="text-xs text-[#4b4b4b] mt-1">
-                      Your voice interview was completed successfully.
+                      {isEvaluating
+                        ? 'Gemini 2.5 Flash is generating your multi-axis competency scorecard.'
+                        : 'Your performance evaluation and exportable portfolio are ready.'}
                     </p>
                   </div>
+
+                  {reviewPortfolio && (
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      size="md"
+                      onClick={() => setReviewPortfolio(reviewPortfolio)}
+                    >
+                      <Award className="w-4 h-4 mr-1.5" />
+                      View Performance Portfolio
+                    </Button>
+                  )}
+
                   <Button
-                    variant="primary"
+                    variant="secondary"
                     fullWidth
                     size="md"
-                    onClick={resetSession}
+                    onClick={handleManualReset}
                   >
                     Start Another Interview
                   </Button>
@@ -201,7 +303,6 @@ function GuestInterviewContent() {
             </div>
           </div>
 
-          {/* Real-time Streaming Transcript Column */}
           <div className="lg:col-span-7 flex flex-col h-full bg-white border-2 border-[#e5e5e5] rounded-[12px] p-6">
             <div className="flex items-center justify-between pb-4 border-b-2 border-[#e5e5e5] mb-4">
               <h3 className="text-sm font-extrabold uppercase tracking-[0.053em] text-[#042c60]">
@@ -214,9 +315,16 @@ function GuestInterviewContent() {
 
             <TranscriptFeed messages={messages} className="flex-1 min-h-[300px]" />
           </div>
-
         </div>
       </main>
+
+      {reviewPortfolio && (
+        <SessionReviewDrawer
+          isOpen={Boolean(reviewPortfolio)}
+          onClose={() => setReviewPortfolio(null)}
+          portfolioData={reviewPortfolio}
+        />
+      )}
     </div>
   );
 }
