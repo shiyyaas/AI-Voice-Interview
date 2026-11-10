@@ -1,31 +1,19 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from './types';
-
-export function createServerSupabaseClient(authToken?: string): SupabaseClient<Database> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
-
-  const client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 import type { Database } from '@/lib/supabase/types';
 
-let cachedServerClient: SupabaseClient<Database> | null = null;
-
-export function getSupabaseServerClient(): SupabaseClient<Database> {
-  if (cachedServerClient) {
-    return cachedServerClient;
-  }
-
+export function getSupabaseServerClient(authToken?: string): SupabaseClient<Database> {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
     'https://placeholder-project.supabase.co';
 
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    'placeholder-anon-key';
+  // Explicit condition: Use the Anon key when a user token is provided to trigger RLS.
+  // Otherwise, safely fallback to the high-privilege Service Role Key for webhooks.
+  const supabaseKey = authToken
+    ? (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key')
+    : (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key');
 
-  cachedServerClient = createClient<Database>(supabaseUrl, supabaseKey, {
+  return createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -38,9 +26,4 @@ export function getSupabaseServerClient(): SupabaseClient<Database> {
         : {},
     },
   });
-
-  return client;
-  });
-
-  return cachedServerClient;
 }
