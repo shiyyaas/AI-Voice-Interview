@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ecto-green: #58cc02;
+  --color-lingot-lime: #a5ed6e;
+  --color-eel-light: #d7ffb8;
+  --color-macaw-blue: #1cb0f6;
+  --color-eel-dark-blue: #042c60;
+  --color-midnight: #000437;
+  --color-graphite: #3c3c3c;
+  --color-ash: #777777;
+  --color-charcoal: #4b4b4b;
+  --color-paper: #ffffff;
+  --color-ink: #000000;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-charcoal);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.053em;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Pressable 3D tactile buttons adhering strictly to DESIGN.md */
+.btn-primary-duo {
+  background-color: var(--color-ecto-green);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 12px;
+  border-bottom: 3px solid #46a302;
+  transition: transform 0.1s ease, border-bottom 0.1s ease;
+  letter-spacing: 0.053em;
+}
+
+.btn-primary-duo:hover {
+  background-color: #52be02;
+}
+
+.btn-primary-duo:active {
+  transform: translateY(2px);
+  border-bottom: 1px solid #46a302;
+}
+
+.btn-secondary-duo {
+  background-color: transparent;
+  color: var(--color-ecto-green);
+  border: 2px solid var(--color-lingot-lime);
+  font-weight: 700;
+  border-radius: 12px;
+  letter-spacing: 0.053em;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary-duo:hover {
+  background-color: #f7fff0;
+  border-color: var(--color-ecto-green);
+}
+
+.btn-blue-duo {
+  background-color: var(--color-macaw-blue);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 12px;
+  border-bottom: 3px solid #1899d6;
+  transition: transform 0.1s ease, border-bottom 0.1s ease;
+  letter-spacing: 0.053em;
+}
+
+.btn-blue-duo:hover {
+  background-color: #179edc;
+}
+
+.btn-blue-duo:active {
+  transform: translateY(2px);
+  border-bottom: 1px solid #1899d6;
+}
+
+.btn-danger-duo {
+  background-color: #ff4b4b;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 12px;
+  border-bottom: 3px solid #d93838;
+  letter-spacing: 0.053em;
+}
+
+.btn-danger-duo:active {
+  transform: translateY(2px);
+  border-bottom: 1px solid #d93838;
+}
+
+/* Duolingo Pill style */
+.pill-duo {
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.053em;
+  text-transform: uppercase;
+  font-size: 13px;
+  border: 2px solid #e5e5e5;
+  background-color: #ffffff;
+}
+
+/* Feature Headline */
+.heading-duo-feather {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
