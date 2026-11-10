@@ -31,16 +31,23 @@ export function Navbar({ isGuest = true }: NavbarProps) {
           href="/dashboard"
           className="text-xs md:text-sm font-bold text-[#4b4b4b] hover:text-[#58cc02] transition-colors uppercase tracking-[0.053em]"
         >
-          Mock Interviews
+          Tracks
+        </Link>
+
+        <Link
+          href="/dashboard/analytics"
+          className="text-xs md:text-sm font-bold text-[#4b4b4b] hover:text-[#58cc02] transition-colors uppercase tracking-[0.053em]"
+        >
+          Analytics
         </Link>
 
         {isGuest ? (
           <div className="flex items-center space-x-2">
             <Link
-              href="/dashboard?guest=true"
-              className="inline-flex items-center px-4 py-2 text-xs md:text-sm font-bold rounded-[12px] text-[#1cb0f6] border-2 border-[#1cb0f6] hover:bg-[#f0f9ff] tracking-[0.053em] uppercase"
+              href="/dashboard/analytics"
+              className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 text-xs md:text-sm font-bold rounded-[12px] text-[#1cb0f6] border-2 border-[#1cb0f6] hover:bg-[#f0f9ff] tracking-[0.053em] uppercase"
             >
-              Guest Hub
+              Progress Hub
             </Link>
           </div>
         ) : (

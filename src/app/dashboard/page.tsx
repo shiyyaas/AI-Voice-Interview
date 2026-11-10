@@ -77,13 +77,22 @@ export default function DashboardPage() {
         </div>
 
         {/* Header Block */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-[#042c60] tracking-tight">
-            Interview Blueprints & Tracks
-          </h1>
-          <p className="text-sm text-[#777777] font-medium mt-1">
-            Select a specialized AI interviewer blueprint to configure your real-time voice session.
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-[#042c60] tracking-tight">
+              Interview Blueprints & Tracks
+            </h1>
+            <p className="text-sm text-[#777777] font-medium mt-1">
+              Select a specialized AI interviewer blueprint to configure your real-time voice session.
+            </p>
+          </div>
+
+          <Link href="/dashboard/analytics">
+            <Button variant="secondary" size="md">
+              <Sparkles className="w-4 h-4 mr-1.5 text-[#58cc02]" />
+              View Analytics Dashboard
+            </Button>
+          </Link>
         </div>
 
         {/* Blueprint Cards */}

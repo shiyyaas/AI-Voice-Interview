@@ -10,7 +10,8 @@ import { VoiceWaveVisualizer } from '@/components/interview/VoiceWaveVisualizer'
 import { HardwarePermissionAlert } from '@/components/interview/HardwarePermissionAlert';
 import { TranscriptFeed } from '@/components/interview/TranscriptFeed';
 import { useVoiceEngine } from '@/context/VoiceEngineContext';
-import { PhoneOff, Mic, Play, RefreshCw, VolumeX, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { InterviewReviewDrawer, SessionReviewData } from '@/components/interview/InterviewReviewDrawer';
+import { PhoneOff, Mic, Play, RefreshCw, VolumeX, AlertTriangle, ArrowLeft, Award, FileText } from 'lucide-react';
 
 function GuestInterviewContent() {
   const searchParams = useSearchParams();
@@ -31,6 +32,9 @@ function GuestInterviewContent() {
   } = useVoiceEngine();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
+  const [reviewData, setReviewData] = useState<SessionReviewData | null>(null);
 
   // Elapsed timer when call is active
   useEffect(() => {
@@ -181,13 +185,71 @@ function GuestInterviewContent() {
                       Session Complete!
                     </p>
                     <p className="text-xs text-[#4b4b4b] mt-1">
-                      Your voice interview was completed successfully.
+                      Your voice interview was completed successfully. {messages.length} exchanges recorded.
                     </p>
                   </div>
+
                   <Button
                     variant="primary"
                     fullWidth
                     size="md"
+                    disabled={isEvaluating}
+                    onClick={async () => {
+                      setIsEvaluating(true);
+                      try {
+                        const res = await fetch('/api/interview/evaluate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            transcript: messages,
+                          }),
+                        });
+                        const data = await res.json();
+                        setReviewData({
+                          sessionId: `guest-${Date.now().toString(36)}`,
+                          roleTitle: blueprint.replace('-', ' '),
+                          experienceLevel: 'Guest Assessment',
+                          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                          durationSeconds: elapsedSeconds,
+                          overallScore: data.overall_score || 80,
+                          strengths: data.strengths || ['Clear communication'],
+                          weaknesses: data.weaknesses || ['Provide more architecture trade-offs'],
+                          suggestedExercises: data.suggested_exercises || ['Practice system design'],
+                          competencyMetrics: data.competency_metrics || {
+                            syntax_accuracy: 80,
+                            system_architecture: 75,
+                            verbal_communication_fluency: 85,
+                            problem_solving: 80,
+                            practical_execution: 78,
+                          },
+                          transcript: messages,
+                          keyTakeaways: data.key_takeaways,
+                        });
+                        setReviewDrawerOpen(true);
+                      } catch (e) {
+                        console.error('Failed to evaluate session:', e);
+                      } finally {
+                        setIsEvaluating(false);
+                      }
+                    }}
+                  >
+                    {isEvaluating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Analyzing Transcript...
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-4 h-4 mr-2" />
+                        View Performance & Portfolio
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    size="sm"
                     onClick={resetSession}
                   >
                     Start Another Interview
@@ -216,6 +278,13 @@ function GuestInterviewContent() {
           </div>
 
         </div>
+
+      {/* Review Drawer */}
+      <InterviewReviewDrawer
+        isOpen={reviewDrawerOpen}
+        onClose={() => setReviewDrawerOpen(false)}
+        sessionData={reviewData}
+      />
       </main>
     </div>
   );

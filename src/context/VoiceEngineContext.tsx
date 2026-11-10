@@ -100,7 +100,23 @@ export function VoiceEngineProvider({
 
     serviceRef.current = service;
 
+    // Hardened window unload / pagehide listeners to cleanly disconnect active audio and WebRTC
+    const handleWindowUnload = () => {
+      if (serviceRef.current) {
+        serviceRef.current.destroy();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleWindowUnload);
+      window.addEventListener('pagehide', handleWindowUnload);
+    }
+
     return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeunload', handleWindowUnload);
+        window.removeEventListener('pagehide', handleWindowUnload);
+      }
       service.destroy();
       serviceRef.current = null;
     };
