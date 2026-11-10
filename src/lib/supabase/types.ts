@@ -82,7 +82,7 @@ export interface Database {
           industry?: string;
           experience_level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'executive';
           technical_stack?: string[];
-          interview_type: 'technical' | 'behavioral' | 'system_design' | 'mixed';
+          interview_type?: 'technical' | 'behavioral' | 'system_design' | 'mixed';
           system_prompt?: string | null;
           vapi_assistant_id?: string | null;
           duration_minutes?: number;
