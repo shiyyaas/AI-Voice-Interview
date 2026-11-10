@@ -42,6 +42,7 @@ export interface Database {
           avatar_url?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       interview_configs: {
         Row: {
@@ -64,9 +65,9 @@ export interface Database {
           user_id?: string | null;
           role_title: string;
           industry?: string;
-          experience_level: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'executive';
+          experience_level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'executive';
           technical_stack?: string[];
-          interview_type: 'technical' | 'behavioral' | 'system_design' | 'mixed';
+          interview_type?: 'technical' | 'behavioral' | 'system_design' | 'mixed';
           system_prompt?: string | null;
           vapi_assistant_id?: string | null;
           duration_minutes?: number;
@@ -88,6 +89,7 @@ export interface Database {
           is_template?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
       };
       interview_sessions: {
         Row: {
@@ -131,6 +133,7 @@ export interface Database {
           metadata?: Json;
           updated_at?: string;
         };
+        Relationships: [];
       };
       interview_feedback: {
         Row: {
@@ -174,7 +177,10 @@ export interface Database {
           key_takeaways?: string | null;
           detailed_critique?: Json;
         };
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }
